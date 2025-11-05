@@ -1,0 +1,7 @@
+@import "tailwindcss";
+/* Froala Editor CSS */
+@import "froala-editor/css/froala_editor.pkgd.min.css";
+@import "froala-editor/css/froala_style.min.css";
+
+/* Optional Themes */
+@import "froala-editor/css/themes/gray.min.css";
