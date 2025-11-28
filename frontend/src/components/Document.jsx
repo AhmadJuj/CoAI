@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Editor } from "@tinymce/tinymce-react";
+import { Sparkles } from "lucide-react";
 import axios from "axios";
 
-export default function Document({ selectedWorkspace, userId }) {
+export default function Document({ selectedWorkspace, userId, generatedContent }) {
   const [docId, setDocId] = useState(null);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [improving, setImproving] = useState(false);
   const [workspaceDocs, setWorkspaceDocs] = useState([]);
+
+  // Update content when AI generates new content from chat
+  useEffect(() => {
+    if (generatedContent) {
+      setContent(generatedContent);
+    }
+  }, [generatedContent]);
 
   // Load documents for selected workspace
   useEffect(() => {
@@ -129,6 +138,32 @@ export default function Document({ selectedWorkspace, userId }) {
     }
   };
 
+  // Improve document with AI
+  const handleImproveDocument = async () => {
+    if (!content || content.trim().length === 0) {
+      alert("Please write some content first before improving!");
+      return;
+    }
+
+    setImproving(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await axios.post(`${apiUrl}/api/ai/improve-document`, {
+        content
+      });
+
+      if (response.data.content) {
+        setContent(response.data.content);
+        alert("✨ Document improved with AI!");
+      }
+    } catch (err) {
+      console.error("Error improving document:", err);
+      alert("❌ Failed to improve document. Please check your Gemini API key.");
+    } finally {
+      setImproving(false);
+    }
+  };
+
   if (!selectedWorkspace) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -214,13 +249,24 @@ export default function Document({ selectedWorkspace, userId }) {
                 </div>
               )}
             </div>
-            <button
-              onClick={handleSave}
-              disabled={saving || loading}
-              className="px-6 py-2 bg-cyan-500 text-black font-semibold rounded-lg shadow hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? "Saving..." : docId ? "Update" : "Save"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleImproveDocument}
+                disabled={improving || loading || !content}
+                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg shadow hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                title="Improve document with AI"
+              >
+                <Sparkles className="h-4 w-4" />
+                {improving ? "Improving..." : "AI Improve"}
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving || loading}
+                className="px-6 py-2 bg-cyan-500 text-black font-semibold rounded-lg shadow hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? "Saving..." : docId ? "Update" : "Save"}
+              </button>
+            </div>
           </div>
 
           {/* Loading Indicator */}

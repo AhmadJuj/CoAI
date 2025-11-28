@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import {
   MessageSquare,
   FileText,
@@ -14,13 +13,11 @@ import {
   Menu,
   X
 } from "lucide-react";
-import { Link } from "react-router-dom";
-// ✅ Supabase client
-const supabaseUrl = "https://mudsmruncvpvouusgtrx.supabase.co";
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-export const supabase = createClient(supabaseUrl, supabaseKey);
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 
 export default function Auth() {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -41,12 +38,19 @@ export default function Auth() {
     try {
       if (isLogin) {
         // 🔹 LOGIN
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        setSuccessMsg("Logged in successfully ✅");
+        
+        // ✅ Successfully logged in - navigate to dashboard
+        console.log("Login successful!", data);
+        console.log("Session:", data.session);
+        setSuccessMsg("Logged in successfully ✅ Redirecting...");
+        
+        // Navigate immediately - App.jsx will handle session
+        navigate('/sidebar', { replace: true });
       } else {
         // 🔹 SIGNUP
         const { error } = await supabase.auth.signUp({
@@ -75,19 +79,19 @@ export default function Auth() {
             <div className="p-2 bg-[#06B6D4]/20 rounded-lg">
               <FileText className="w-6 h-6 text-[#06B6D4]" />
             </div>
-            <span className="text-xl font-bold text-blue-200">DocHub</span>
+            <span className="text-xl font-bold text-whiteAlpha-200">DocHub</span>
           </div>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-[#E2E8F0] hover:text-blue-200 transition-colors">
+            <a href="#features" className="text-[#E2E8F0] hover:text-whiteAlpha-200 transition-colors">
               Features
             </a>
-            <a href="#about" className="text-[#E2E8F0] hover:text-blue-200 transition-colors">
+            <a href="#about" className="text-[#E2E8F0] hover:text-whiteAlpha-200 transition-colors">
               About
             </a>
-            <a href="#pricing" className="text-[#E2E8F0] hover:text-blue-200 transition-colors">
+            <a href="#pricing" className="text-[#E2E8F0] hover:text-whiteAlpha-200 transition-colors">
               Pricing
             </a>
            <Link to="/auth">
@@ -100,7 +104,7 @@ export default function Auth() {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-[#E2E8F0] hover:text-blue-200 hover:bg-[#1E293B] transition-colors"
+            className="md:hidden p-2 rounded-lg text-[#E2E8F0] hover:text-whiteAlpha-200 hover:bg-[#1E293B] transition-colors"
           >
             {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -110,13 +114,13 @@ export default function Auth() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-[#06B6D4]/30">
             <div className="flex flex-col space-y-3">
-              <a href="#features" className="text-[#E2E8F0] hover:text-blue-200 transition-colors px-2 py-1">
+              <a href="#features" className="text-[#E2E8F0] hover:text-whiteAlpha-200 transition-colors px-2 py-1">
                 Features
               </a>
-              <a href="#about" className="text-[#E2E8F0] hover:text-blue-200 transition-colors px-2 py-1">
+              <a href="#about" className="text-[#E2E8F0] hover:text-whiteAlpha-200 transition-colors px-2 py-1">
                 About
               </a>
-              <a href="#pricing" className="text-[#E2E8F0] hover:text-blue-200 transition-colors px-2 py-1">
+              <a href="#pricing" className="text-[#E2E8F0] hover:text-whiteAlpha-200 transition-colors px-2 py-1">
                 Pricing
               </a>
               <Link to="/auth">
@@ -135,7 +139,7 @@ export default function Auth() {
     <Navbar/>
     <div className="flex min-h-screen items-center justify-center bg-[#1E293B]">
       <div className="w-full max-w-md rounded-2xl bg-[#0F172A] p-8 shadow-xl">
-        <h2 className="text-2xl font-bold text-center text-blue-200 mb-6">
+        <h2 className="text-2xl font-bold text-center text-whiteAlpha-200 mb-6">
           {isLogin ? "Login" : "Sign Up"}
         </h2>
 
@@ -194,7 +198,7 @@ export default function Auth() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-blue-200 py-3 font-semibold text-black transition hover:bg-black hover:text-blue-200 hover:border-blue-400 border border-transparent disabled:opacity-50"
+            className="w-full rounded-lg bg-whiteAlpha-200 py-3 font-semibold text-black transition hover:bg-black hover:text-whiteAlpha-200 hover:border-whiteAlpha-400 border border-transparent disabled:opacity-50"
             >
             {loading ? "Please wait..." : isLogin ? "Login" : "Sign Up"}
           </button>
@@ -205,7 +209,7 @@ export default function Auth() {
           <button
             type="button"
             onClick={() => setIsLogin(!isLogin)}
-            className="text-blue-200 font-medium hover:underline hover:text-blue-400"
+            className="text-whiteAlpha-200 font-medium hover:underline hover:text-whiteAlpha-400"
             >
             {isLogin ? "Sign Up" : "Login"}
           </button>

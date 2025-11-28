@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Hash, Users, Settings, Send } from "lucide-react";
+import { Hash, Users, Settings, Send, Sparkles } from "lucide-react";
 import { useSocket } from "./SocketContext";
+import axios from "axios";
 
 export default function ChatContent({ 
   selectedChannel,
-  currentUser // ✅ Get from props instead of context
+  currentUser, // ✅ Get from props instead of context
+  onGenerateDocument // Callback to pass generated content to document editor
 }) {
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const [isGenerating, setIsGenerating] = useState(false);
   const socket = useSocket();
 
   // Join channel when component mounts or channel changes
@@ -84,10 +87,38 @@ export default function ChatContent({
     setNewMessage("");
   };
 
+  const handleGenerateDocument = async () => {
+    if (messages.length === 0) {
+      alert('No messages to generate document from. Start chatting first!');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await axios.post(`${apiUrl}/api/ai/generate-from-chat`, {
+        channelId: selectedChannel.id
+      });
+
+      if (response.data.content) {
+        // Pass generated content to parent (dashboard) to update document
+        if (onGenerateDocument) {
+          onGenerateDocument(response.data.content);
+        }
+        alert(`✨ Document generated from ${response.data.messageCount} messages!`);
+      }
+    } catch (error) {
+      console.error('Error generating document:', error);
+      alert('Failed to generate document. Please check your Gemini API key in .env file.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 border-b border-[#06B6D4] bg-[#0F172A] flex-shrink-0">
+      <div className="flex items-center justify-between p-4 border-b border-[#06B6D4] bg-[#0F172A] shrink-0">
         <div className="flex items-center">
           <Hash className="h-5 w-5 mr-2 text-blue-200" />
           <h3 className="font-semibold text-blue-200">
@@ -95,6 +126,15 @@ export default function ChatContent({
           </h3>
         </div>
         <div className="flex items-center space-x-2">
+          <button 
+            onClick={handleGenerateDocument}
+            disabled={isGenerating || messages.length === 0}
+            className="px-3 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+            title="Generate document from chat using AI"
+          >
+            <Sparkles className="h-4 w-4" />
+            {isGenerating ? 'Generating...' : 'AI Generate'}
+          </button>
           <button className="p-2 rounded text-[#E2E8F0] hover:text-blue-200 hover:bg-[#1E293B] transition-colors">
             <Users className="h-4 w-4" />
           </button>

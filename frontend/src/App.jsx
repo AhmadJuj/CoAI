@@ -12,14 +12,17 @@ export default function App() {
     // ✅ Check for existing session on load
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
+      console.log("Initial session:", data.session);
       setSession(data.session);
       setLoading(false);
     };
     getSession();
 
     // ✅ Listen for login/logout changes
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session);
       setSession(session);
+      setLoading(false);
     });
 
     return () => {

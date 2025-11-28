@@ -33,6 +33,9 @@ app.use('/api/documents', documentRoutes);
 const messageRoutes = require('./routes/message.route.cjs');
 app.use('/api/messages', messageRoutes);
 
+const aiRoutes = require('./routes/ai.route.cjs');
+app.use('/api/ai', aiRoutes);
+
 // ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,

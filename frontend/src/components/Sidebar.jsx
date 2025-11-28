@@ -18,6 +18,7 @@ export default function Sidebar() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
   const [currentUser, setCurrentUser] = useState(null); // ✅ Add this
+  const [generatedContent, setGeneratedContent] = useState(null); // For AI-generated content
 
   // Fetch Supabase user and workspaces on mount
   useEffect(() => {
@@ -90,14 +91,14 @@ export default function Sidebar() {
       id: 1,
       name: "general",
       type: "channel",
-      unread: 2,
+      unread: 0,
       messages: [],
     },
     {
       id: 3,
       name: "Alice Johnson",
       type: "dm",
-      unread: 1,
+      unread: 0,
       messages: [],
     },
     { id: 4, name: "Bob Smith", type: "dm", unread: 0, messages: [] },
@@ -105,8 +106,12 @@ export default function Sidebar() {
 
   const [selectedChannel, setSelectedChannel] = useState(chatChannels[0]);
 
-  // ✅ Remove this - ChatContent handles sending now
-  // const handleSendMessage = () => { ... }
+  // Handle AI-generated document content from chat
+  const handleGenerateDocument = (content) => {
+    setGeneratedContent(content);
+    // Switch to document view
+    setSelectedChannel(null);
+  };
 
   return (
     <div className="flex h-screen bg-[#1E293B]">
@@ -160,9 +165,14 @@ export default function Sidebar() {
           <ChatContent
             selectedChannel={selectedChannel}
             currentUser={currentUser}
+            onGenerateDocument={handleGenerateDocument}
           />
         ) : (
-          <Document selectedWorkspace={selectedWorkspace} userId={userId} />
+          <Document 
+            selectedWorkspace={selectedWorkspace} 
+            userId={userId}
+            generatedContent={generatedContent}
+          />
         )}
       </div>
     </div>
