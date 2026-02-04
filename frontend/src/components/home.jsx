@@ -13,12 +13,7 @@ import {
   Menu,
   X
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
-function onNavigateToAuth() {
-  const navigate = useNavigate();
-  navigate("/auth");
-}
+import { useNavigate, Link } from "react-router-dom";
 
 export default function Homepage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -343,12 +338,11 @@ export default function Homepage() {
             Join thousands of teams who have already revolutionized their collaboration with DocHub.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button 
-              onClick={onNavigateToAuth}
-              className="bg-[#06B6D4] text-black px-8 py-4 rounded-xl font-semibold text-lg hover:bg-[#0891b2] transition-all duration-200 transform hover:scale-105 shadow-lg"
-            >
-              Start Your Free Trial
-            </button>
+            <Link to="/sidebar">
+              <button className="bg-[#06B6D4] text-black px-8 py-4 rounded-xl font-semibold text-lg hover:bg-[#0891b2] transition-all duration-200 transform hover:scale-105 shadow-lg">
+                Start Your Free Trial
+              </button>
+            </Link>
             <button className="border border-[#06B6D4] text-[#06B6D4] px-8 py-4 rounded-xl font-semibold hover:bg-[#06B6D4] hover:text-black transition-all duration-200">
               Schedule a Demo
             </button>

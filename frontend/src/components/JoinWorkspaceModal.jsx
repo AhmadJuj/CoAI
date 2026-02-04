@@ -1,6 +1,7 @@
 // components/JoinWorkspaceModal.jsx
 import React, { useState } from "react";
 import { X, Search, Lock } from "lucide-react";
+import { supabase } from "../supabaseClient";
 
 export default function JoinWorkspaceModal({ isOpen, onClose, onJoined, userId }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,7 +63,26 @@ export default function JoinWorkspaceModal({ isOpen, onClose, onJoined, userId }
     setError("");
 
     try {
+      // Get current user info
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        setError("You must be logged in to join a workspace");
+        setLoading(false);
+        return;
+      }
+
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      
+      const joinData = { 
+        password, 
+        userId: user.id,
+        userName: user.user_metadata?.name || user.email || 'User',
+        userEmail: user.email
+      };
+      
+      console.log('📤 Sending join data:', joinData);
+      
       const response = await fetch(
         `${apiUrl}/api/workspaces/${selectedWorkspace._id}/join`,
         {
@@ -70,7 +90,7 @@ export default function JoinWorkspaceModal({ isOpen, onClose, onJoined, userId }
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ password, userId }),
+          body: JSON.stringify(joinData),
         }
       );
 

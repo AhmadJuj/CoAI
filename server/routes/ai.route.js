@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import { generateDocumentFromChat, improveDocumentContent } from '../services/gemini.service.js';
+import Message from '../models/message.model.js';
+import Document from '../models/document.model.js';
+
 const router = express.Router();
-const { generateDocumentFromChat, improveDocumentContent } = require('../services/gemini.service.cjs');
-const Message = require('../models/message.model.cjs');
-const Document = require('../models/document.model.cjs');
 
 /**
  * POST /api/ai/generate-from-chat
@@ -75,4 +76,4 @@ router.post('/improve-document', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

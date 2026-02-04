@@ -1,6 +1,8 @@
-const router = require("express").Router();
-const Doc = require("../models/document.model.cjs");
-const Workspace = require("../models/workspace.model.cjs");
+import express from "express";
+import Doc from "../models/document.model.js";
+import Workspace from "../models/workspace.model.js";
+
+const router = express.Router();
 
 // Save or update a document
 router.post("/save", async (req, res) => {
@@ -143,4 +145,4 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

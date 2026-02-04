@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import Message from '../models/message.model.js';
+
 const router = express.Router();
-const Message = require('../models/message.model.cjs');
 
 // Get all messages for a channel
 router.get('/channel/:channelId', async (req, res) => {
@@ -40,4 +41,4 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

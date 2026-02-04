@@ -26,20 +26,27 @@ export default function CreateWorkspaceModal({ isOpen, onClose, onCreated }) {
   setLoading(true);
 
   try {
-    const userId = await getSupabaseUserId();
-    if (!userId) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
       setError("You must be logged in to create a workspace.");
       setLoading(false);
       return;
     }
 
-    const res = await axios.post("http://localhost:5000/api/workspaces", {
+    const workspaceData = {
       name,
       description,
       icon,
       password,
-      userId, // safe now
-    });
+      userId: user.id,
+      userName: user.user_metadata?.name || user.email || 'User',
+      userEmail: user.email
+    };
+
+    console.log('📤 Sending workspace data:', workspaceData);
+
+    const res = await axios.post("http://localhost:5000/api/workspaces", workspaceData);
 
     onCreated(res.data);
 

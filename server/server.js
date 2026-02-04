@@ -1,9 +1,11 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const http = require('http');
-const { Server } = require('socket.io');
-require('dotenv').config();
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import http from 'http';
+import { Server } from 'socket.io';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
@@ -24,17 +26,20 @@ app.use(cors({
 app.use(express.json());
 
 // ✅ Routes
-const workspaceRoutes = require("./routes/workspace.route.cjs");
+import workspaceRoutes from "./routes/workspace.route.js";
 app.use("/api/workspaces", workspaceRoutes);
 
-const documentRoutes = require('./routes/document.route.cjs');
+import documentRoutes from './routes/document.route.js';
 app.use('/api/documents', documentRoutes);
 
-const messageRoutes = require('./routes/message.route.cjs');
+import messageRoutes from './routes/message.route.js';
 app.use('/api/messages', messageRoutes);
 
-const aiRoutes = require('./routes/ai.route.cjs');
+import aiRoutes from './routes/ai.route.js';
 app.use('/api/ai', aiRoutes);
+
+import channelRoutes from './routes/channel.route.js';
+app.use('/api/channels', channelRoutes);
 
 // ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
@@ -53,7 +58,7 @@ app.get('/', (req, res) => {
 // 🔥 SOCKET.IO CONNECTION HANDLING
 // =============================================
 
-const Message = require('./models/message.model.cjs');
+import Message from './models/message.model.js';
 
 io.on('connection', (socket) => {
   console.log('✅ User connected:', socket.id);
@@ -63,6 +68,13 @@ io.on('connection', (socket) => {
     const channelRoom = String(channelId);
     socket.join(channelRoom);
     console.log(`👤 User ${socket.id} joined channel room: ${channelRoom}`);
+  });
+
+  // When a user leaves a channel
+  socket.on('leave-channel', (channelId) => {
+    const channelRoom = String(channelId);
+    socket.leave(channelRoom);
+    console.log(`🚪 User ${socket.id} left channel room: ${channelRoom}`);
   });
 
   // When a user sends a message
@@ -81,9 +93,10 @@ io.on('connection', (socket) => {
       await newMessage.save();
       console.log('💾 Message saved to database with ID:', newMessage._id);
       
-      // Add the saved message data with timestamp
+      // Add the saved message data with timestamp and channelId
       const messageToSend = {
         id: newMessage._id.toString(),
+        channelId: String(messageData.channelId), // Include channelId for filtering
         userName: newMessage.senderName,
         message: newMessage.content,
         timestamp: newMessage.createdAt
@@ -102,6 +115,7 @@ io.on('connection', (socket) => {
       const channelRoom = String(messageData.channelId);
       io.to(channelRoom).emit('receive-message', {
         id: Date.now().toString(),
+        channelId: String(messageData.channelId),
         userName: messageData.userName,
         message: messageData.message,
         timestamp: new Date()

@@ -1,6 +1,5 @@
-// models/workspace.model.cjs
-const bcrypt = require("bcrypt");
-const mongoose = require("mongoose");
+import bcrypt from "bcrypt";
+import mongoose from "mongoose";
 
 const WorkspaceSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -10,6 +9,8 @@ const WorkspaceSchema = new mongoose.Schema({
   members: [
     {
       user: { type: String, required: true }, // Supabase user ID
+      userName: { type: String }, // User's display name
+      userEmail: { type: String }, // User's email
       role: { 
         type: String, 
         enum: ["owner", "admin", "editor", "viewer"], 
@@ -28,4 +29,4 @@ WorkspaceSchema.pre("save", async function (next) {
   next();
 });
 
-module.exports = mongoose.model("Workspace", WorkspaceSchema);
+export default mongoose.model("Workspace", WorkspaceSchema);

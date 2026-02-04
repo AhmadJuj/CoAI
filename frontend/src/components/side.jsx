@@ -1,5 +1,5 @@
 import React from "react";
-import { Hash, User, X, MessageSquare, UserPlus } from "lucide-react";
+import { Hash, User, X, MessageSquare, UserPlus, FileText } from "lucide-react";
 
 export default function SidebarNav({ 
   selectedWorkspace, 
@@ -7,13 +7,79 @@ export default function SidebarNav({
   workspaces, 
   loading, 
   setIsModalOpen,
-   setIsJoinModalOpen,
+  setIsJoinModalOpen,
   chatChannels,
+  workspaceMembers, // ✅ Add this prop
   selectedChannel,
-  setSelectedChannel
+  setSelectedChannel,
+  currentUser, // ✅ Add currentUser to access logged-in user info
+  isSidebarOpen,
+  setIsSidebarOpen,
+  mobileView,
+  onDocumentView
 }) {
+  
+  // Handle DM click - create or fetch DM channel
+  const handleDMClick = async (member) => {
+    if (!currentUser || !selectedWorkspace) return;
+    
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      console.log('💬 Creating/fetching DM channel with:', member.name);
+      
+      const response = await fetch(`${apiUrl}/api/channels/dm`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          workspaceId: selectedWorkspace._id,
+          userId1: currentUser.id,
+          userId2: member.userId,
+          userName1: currentUser.name,
+          userName2: member.name
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create/fetch DM channel');
+      }
+      
+      const dmChannel = await response.json();
+      console.log('✅ DM channel ready:', dmChannel);
+      
+      // Set the actual DM channel with real ID
+      setSelectedChannel({
+        id: dmChannel._id,
+        name: member.name,
+        type: 'dm',
+        userId: member.userId
+      });
+      
+      // Close sidebar on mobile after selecting DM
+      if (window.innerWidth < 1024) {
+        setIsSidebarOpen(false);
+      }
+    } catch (error) {
+      console.error('❌ Error creating DM channel:', error);
+      alert('Failed to create DM channel');
+    }
+  };
+  
   return (
-    <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-[#0F172A] border-r border-[#06B6D4] overflow-y-auto z-40">
+    <>
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-[#0F172A] border-r border-[#06B6D4] overflow-y-auto z-40 transform transition-transform duration-300 ease-in-out ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      } lg:translate-x-0`}>
       {!selectedWorkspace ? (
         // Workspaces Sidebar
         <div className="p-4">
@@ -95,38 +161,51 @@ export default function SidebarNav({
 
             <h3 className="text-sm font-medium text-blue-200 mb-2">Channels</h3>
             <div className="space-y-1">
-              {chatChannels
-                .filter((ch) => ch.type === "channel")
-                .map((channel) => (
-                  <button
-                    key={channel.id}
-                    onClick={() => setSelectedChannel(channel)}
-                    className={`w-full flex items-center p-2 rounded text-left transition-colors ${
-                      selectedChannel?.id === channel.id
-                        ? "bg-[#06B6D4] text-black"
-                        : "text-[#E2E8F0] hover:bg-[#1E293B] hover:text-blue-200"
-                    }`}
-                  >
-                    <Hash className="h-4 w-4 mr-2" />
-                    <span className="flex-1">{channel.name}</span>
-                    {channel.unread > 0 && (
-                      <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
-                        {channel.unread}
-                      </span>
-                    )}
-                  </button>
-                ))}
+              {!chatChannels || chatChannels.length === 0 ? (
+                <p className="text-sm text-[#94A3B8] px-2 py-1">Loading channels...</p>
+              ) : chatChannels.filter((ch) => ch.type === "channel").length === 0 ? (
+                <p className="text-sm text-[#94A3B8] px-2 py-1">No channels yet</p>
+              ) : (
+                chatChannels
+                  .filter((ch) => ch.type === "channel")
+                  .map((channel) => (
+                    <button
+                      key={channel.id}
+                      onClick={() => setSelectedChannel(channel)}
+                      className={`w-full flex items-center p-2 rounded text-left transition-colors ${
+                        selectedChannel?.id === channel.id
+                          ? "bg-[#06B6D4] text-black"
+                          : "text-[#E2E8F0] hover:bg-[#1E293B] hover:text-blue-200"
+                      }`}
+                    >
+                      <Hash className="h-4 w-4 mr-2" />
+                      <span className="flex-1">{channel.name}</span>
+                      {channel.unread > 0 && (
+                        <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                          {channel.unread}
+                        </span>
+                      )}
+                    </button>
+                  ))
+              )}
 
               {/* Documents Option */}
               <button
-                onClick={() => setSelectedChannel(null)}
+                onClick={() => {
+                  if (onDocumentView && window.innerWidth < 1024) {
+                    onDocumentView();
+                    setIsSidebarOpen(false);
+                  } else {
+                    setSelectedChannel(null);
+                  }
+                }}
                 className={`w-full flex items-center p-2 rounded text-left transition-colors ${
                   !selectedChannel
                     ? "bg-[#06B6D4] text-black"
                     : "text-[#E2E8F0] hover:bg-[#1E293B] hover:text-blue-200"
                 }`}
               >
-                <MessageSquare className="h-4 w-4 mr-2" />
+                <FileText className="h-4 w-4 mr-2" />
                 <span className="flex-1">Documents</span>
               </button>
             </div>
@@ -137,31 +216,29 @@ export default function SidebarNav({
               Direct Messages
             </h3>
             <div className="space-y-1">
-              {chatChannels
-                .filter((ch) => ch.type === "dm")
-                .map((channel) => (
+              {workspaceMembers && workspaceMembers.length > 0 ? (
+                workspaceMembers.map((member) => (
                   <button
-                    key={channel.id}
-                    onClick={() => setSelectedChannel(channel)}
+                    key={member.userId}
+                    onClick={() => handleDMClick(member)}
                     className={`w-full flex items-center p-2 rounded text-left transition-colors ${
-                      selectedChannel?.id === channel.id
+                      selectedChannel?.userId === member.userId
                         ? "bg-[#06B6D4] text-black"
                         : "text-[#E2E8F0] hover:bg-[#1E293B] hover:text-blue-200"
                     }`}
                   >
                     <User className="h-4 w-4 mr-2" />
-                    <span className="flex-1">{channel.name}</span>
-                    {channel.unread > 0 && (
-                      <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
-                        {channel.unread}
-                      </span>
-                    )}
+                    <span className="flex-1">{member.name}</span>
                   </button>
-                ))}
+                ))
+              ) : (
+                <p className="text-sm text-[#94A3B8] px-2 py-1">No other members yet</p>
+              )}
             </div>
           </div>
         </div>
       )}
     </div>
+    </>
   );
 }

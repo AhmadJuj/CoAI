@@ -1,7 +1,10 @@
-const router = require("express").Router();
-const Workspace = require("../models/workspace.model.cjs");
-const bcrypt = require("bcrypt");
-const mongoose = require("mongoose");
+import express from "express";
+import Workspace from "../models/workspace.model.js";
+import Channel from "../models/channel.js";
+import bcrypt from "bcrypt";
+import mongoose from "mongoose";
+
+const router = express.Router();
 
 // Helper function to validate ObjectId
 const isValidObjectId = (id) => {
@@ -11,7 +14,9 @@ const isValidObjectId = (id) => {
 // Create workspace
 router.post("/", async (req, res) => {
   try {
-    const { name, description, icon, password, userId } = req.body;
+    const { name, description, icon, password, userId, userName, userEmail } = req.body;
+
+    console.log('📝 Creating workspace with data:', { name, userId, userName, userEmail });
 
     if (!userId) {
       return res.status(400).json({ error: "User ID required" });
@@ -26,10 +31,36 @@ router.post("/", async (req, res) => {
       description,
       icon,
       password,
-      members: [{ user: userId, role: "owner" }],
+      members: [{ 
+        user: userId, 
+        userName: userName || 'User',
+        userEmail: userEmail,
+        role: "owner" 
+      }],
     });
 
+    console.log('💾 Saving workspace with member:', workspace.members[0]);
+
     await workspace.save();
+
+    console.log('✅ Workspace created:', workspace._id);
+
+    // ✅ Create default "general" channel for the workspace
+    const generalChannel = new Channel({
+      name: "general",
+      type: "channel",
+      workspace: workspace._id,
+      participants: []
+    });
+
+    await generalChannel.save();
+    console.log('✅ General channel created:', generalChannel._id);
+
+    // Add channel to workspace
+    workspace.channels.push(generalChannel._id);
+    await workspace.save();
+    console.log('✅ Channel added to workspace. Total channels:', workspace.channels.length);
+
     res.json(workspace);
   } catch (err) {
     console.error("Error creating workspace:", err);
@@ -82,7 +113,7 @@ router.get("/search", async (req, res) => {
 // Join workspace with password
 router.post("/:id/join", async (req, res) => {
   try {
-    const { password, userId } = req.body;
+    const { password, userId, userName, userEmail } = req.body;
     const workspaceId = req.params.id;
     
     if (!userId) {
@@ -119,8 +150,13 @@ router.post("/:id/join", async (req, res) => {
       return res.status(400).json({ error: "You are already a member of this workspace" });
     }
 
-    // Add user as editor
-    workspace.members.push({ user: userId, role: "editor" });
+    // Add user as editor with their info
+    workspace.members.push({ 
+      user: userId, 
+      userName: userName || 'User',
+      userEmail: userEmail,
+      role: "editor" 
+    });
     await workspace.save();
 
     res.json({ 
@@ -176,4 +212,38 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-module.exports = router;
+// Get workspace members with their details
+router.get("/:id/members", async (req, res) => {
+  try {
+    const workspaceId = req.params.id;
+
+    if (!isValidObjectId(workspaceId)) {
+      return res.status(400).json({ error: "Invalid workspace ID" });
+    }
+
+    const workspace = await Workspace.findById(workspaceId);
+
+    if (!workspace) {
+      return res.status(404).json({ error: "Workspace not found" });
+    }
+
+    // Return members with their stored info
+    const members = workspace.members.map(member => {
+      console.log('👤 Processing member:', member);
+      return {
+        userId: member.user,
+        name: member.userName || member.userEmail || 'User',
+        email: member.userEmail,
+        role: member.role
+      };
+    });
+
+    console.log('✅ Returning members:', members);
+    res.json(members);
+  } catch (err) {
+    console.error("Error fetching workspace members:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+export default router;

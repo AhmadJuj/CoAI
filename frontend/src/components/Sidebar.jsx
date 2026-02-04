@@ -17,8 +17,31 @@ export default function Sidebar() {
   const [workspaces, setWorkspaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null); // ✅ Add this
-  const [generatedContent, setGeneratedContent] = useState(null); // For AI-generated content
+  const [currentUser, setCurrentUser] = useState(null);
+  const [generatedContent, setGeneratedContent] = useState(null);
+  const [chatChannels, setChatChannels] = useState([]); // ✅ Now dynamic
+  const [workspaceMembers, setWorkspaceMembers] = useState([]); // ✅ Store workspace members
+  const [selectedChannel, setSelectedChannel] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar toggle
+  const [mobileView, setMobileView] = useState('sidebar'); // 'sidebar', 'chat', 'document'
+
+  // Handle channel selection - switch to chat view on mobile
+  const handleChannelSelect = (channel) => {
+    setSelectedChannel(channel);
+    setMobileView('chat');
+    setIsSidebarOpen(false);
+  };
+
+  // Handle document view - switch to document view on mobile
+  const handleDocumentView = () => {
+    setMobileView('document');
+    setIsSidebarOpen(false);
+  };
+
+  // Handle back to sidebar
+  const handleBackToSidebar = () => {
+    setMobileView('sidebar');
+  };
 
   // Fetch Supabase user and workspaces on mount
   useEffect(() => {
@@ -38,7 +61,7 @@ export default function Sidebar() {
           // ✅ Set current user with name
           setCurrentUser({
             id: user.id,
-            name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+            name: user.user_metadata?.name || user.email || 'User',
             email: user.email
           });
           
@@ -85,26 +108,88 @@ export default function Sidebar() {
     setSelectedWorkspace(workspace);
   };
 
-  // Sample chat channels
-  const chatChannels = [
-    {
-      id: 1,
-      name: "general",
-      type: "channel",
-      unread: 0,
-      messages: [],
-    },
-    {
-      id: 3,
-      name: "Alice Johnson",
-      type: "dm",
-      unread: 0,
-      messages: [],
-    },
-    { id: 4, name: "Bob Smith", type: "dm", unread: 0, messages: [] },
-  ];
+  // ✅ Fetch workspace channels and members when a workspace is selected
+  useEffect(() => {
+    const fetchWorkspaceData = async () => {
+      if (!selectedWorkspace) {
+        setChatChannels([]);
+        setWorkspaceMembers([]);
+        setSelectedChannel(null);
+        return;
+      }
 
-  const [selectedChannel, setSelectedChannel] = useState(chatChannels[0]);
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        
+        console.log('📡 Fetching channels for workspace:', selectedWorkspace._id);
+        
+        // Fetch channels for this workspace
+        const channelsResponse = await fetch(
+          `${apiUrl}/api/channels/workspace/${selectedWorkspace._id}`
+        );
+        
+        if (!channelsResponse.ok) {
+          throw new Error(`Failed to fetch channels: ${channelsResponse.status}`);
+        }
+        
+        const channelsData = await channelsResponse.json();
+        console.log('📚 Channels fetched:', channelsData);
+        
+        // Format channels for the UI
+        const formattedChannels = channelsData.map(ch => ({
+          id: ch._id,
+          name: ch.name,
+          type: ch.type,
+          unread: 0,
+          messages: []
+        }));
+        
+        console.log('✅ Formatted channels:', formattedChannels);
+        setChatChannels(formattedChannels);
+        
+        // Set default to general channel if available
+        const generalChannel = formattedChannels.find(ch => ch.name === 'general');
+        if (generalChannel) {
+          console.log('🎯 Setting general channel as selected:', generalChannel);
+          setSelectedChannel(generalChannel);
+        } else {
+          console.warn('⚠️ No general channel found!');
+        }
+        
+        // Fetch workspace members
+        const membersResponse = await fetch(
+          `${apiUrl}/api/workspaces/${selectedWorkspace._id}/members`
+        );
+        
+        if (!membersResponse.ok) {
+          throw new Error(`Failed to fetch members: ${membersResponse.status}`);
+        }
+        
+        const membersData = await membersResponse.json();
+        console.log('👥 Members data received:', membersData);
+        
+        // Members already have names from the backend
+        const membersWithDetails = membersData.map(member => ({
+          userId: member.userId,
+          name: member.name,
+          email: member.email,
+          role: member.role,
+          type: 'dm'
+        }));
+        
+        console.log('✅ Members with details:', membersWithDetails);
+        
+        // Filter out current user from DM list
+        const otherMembers = membersWithDetails.filter(m => m.userId !== userId);
+        setWorkspaceMembers(otherMembers);
+        
+      } catch (error) {
+        console.error('Error fetching workspace data:', error);
+      }
+    };
+
+    fetchWorkspaceData();
+  }, [selectedWorkspace, userId]);
 
   // Handle AI-generated document content from chat
   const handleGenerateDocument = (content) => {
@@ -116,7 +201,10 @@ export default function Sidebar() {
   return (
     <div className="flex h-screen bg-[#1E293B]">
       {/* Navbar */}
-      <Navbar />
+      <Navbar 
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
 
       {/* Sidebar Navigation */}
       <SidebarNav
@@ -127,8 +215,14 @@ export default function Sidebar() {
         setIsModalOpen={setIsModalOpen}
         setIsJoinModalOpen={setIsJoinModalOpen}
         chatChannels={chatChannels}
+        workspaceMembers={workspaceMembers}
         selectedChannel={selectedChannel}
-        setSelectedChannel={setSelectedChannel}
+        setSelectedChannel={handleChannelSelect}
+        currentUser={currentUser}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        mobileView={mobileView}
+        onDocumentView={handleDocumentView}
       />
 
       {/* Create Workspace Modal */}
@@ -147,7 +241,7 @@ export default function Sidebar() {
       />
 
       {/* Main Content */}
-      <div className="flex-1 ml-64 flex flex-col h-[calc(100vh-4rem)] mt-16">
+      <div className="flex-1 lg:ml-64 flex flex-col h-[calc(100vh-4rem)] mt-16 overflow-hidden">
         {!selectedWorkspace ? (
           // Default view when no workspace is selected
           <div className="flex items-center justify-center h-full">
@@ -160,19 +254,55 @@ export default function Sidebar() {
               </p>
             </div>
           </div>
-        ) : selectedChannel ? (
-          // ✅ Chat interface - pass currentUser
-          <ChatContent
-            selectedChannel={selectedChannel}
-            currentUser={currentUser}
-            onGenerateDocument={handleGenerateDocument}
-          />
         ) : (
-          <Document 
-            selectedWorkspace={selectedWorkspace} 
-            userId={userId}
-            generatedContent={generatedContent}
-          />
+          <>
+            {/* Mobile Chat View */}
+            <div className={`${mobileView === 'chat' ? 'flex' : 'hidden'} lg:hidden flex-col h-full overflow-hidden`}>
+              {selectedChannel && (
+                <ChatContent 
+                  selectedChannel={selectedChannel}
+                  currentUser={currentUser}
+                  onGenerateDocument={(content) => setGeneratedContent(content)}
+                  onBack={handleBackToSidebar}
+                  isMobile={true}
+                />
+              )}
+            </div>
+
+            {/* Mobile Document View */}
+            <div className={`${mobileView === 'document' ? 'flex' : 'hidden'} lg:hidden flex-col h-full overflow-hidden`}>
+              <Document 
+                selectedWorkspace={selectedWorkspace}
+                userId={userId}
+                generatedContent={generatedContent}
+                currentUser={currentUser}
+                onBack={handleBackToSidebar}
+                isMobile={true}
+              />
+            </div>
+
+            {/* Desktop View */}
+            {selectedChannel ? (
+              <div className="hidden lg:flex flex-1 h-full overflow-hidden">
+                <ChatContent 
+                  selectedChannel={selectedChannel}
+                  currentUser={currentUser}
+                  onGenerateDocument={(content) => setGeneratedContent(content)}
+                  isMobile={false}
+                />
+              </div>
+            ) : (
+              <div className="hidden lg:flex flex-1 h-full overflow-hidden">
+                <Document 
+                  selectedWorkspace={selectedWorkspace}
+                  userId={userId}
+                  generatedContent={generatedContent}
+                  currentUser={currentUser}
+                  isMobile={false}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

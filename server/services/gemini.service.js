@@ -1,11 +1,11 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
  * Generate or improve document content based on chat messages
  */
-async function generateDocumentFromChat(chatMessages, existingDocument = null) {
+export async function generateDocumentFromChat(chatMessages, existingDocument = null) {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
@@ -63,7 +63,7 @@ Please provide the document content in HTML format (suitable for a rich text edi
 /**
  * Improve existing document content
  */
-async function improveDocumentContent(content) {
+export async function improveDocumentContent(content) {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
@@ -89,8 +89,3 @@ Please provide the improved document content in HTML format, preserving the exis
     throw error;
   }
 }
-
-module.exports = {
-  generateDocumentFromChat,
-  improveDocumentContent
-};

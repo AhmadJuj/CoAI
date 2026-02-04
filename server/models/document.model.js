@@ -1,5 +1,4 @@
-// models/document.model.cjs
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const DocSchema = new mongoose.Schema({
   title: { 
@@ -28,4 +27,4 @@ const DocSchema = new mongoose.Schema({
 // Index for faster queries
 DocSchema.index({ workspace: 1, updatedAt: -1 });
 
-module.exports = mongoose.model("Doc", DocSchema);
+export default mongoose.model("Doc", DocSchema);
