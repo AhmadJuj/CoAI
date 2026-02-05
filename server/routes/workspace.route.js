@@ -246,4 +246,48 @@ router.get("/:id/members", async (req, res) => {
   }
 });
 
+// Delete workspace (only owner can delete)
+router.delete("/:id", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const workspaceId = req.params.id;
+
+    if (!userId) {
+      return res.status(400).json({ error: "User ID required" });
+    }
+
+    if (!isValidObjectId(workspaceId)) {
+      return res.status(400).json({ error: "Invalid workspace ID" });
+    }
+
+    const workspace = await Workspace.findById(workspaceId);
+
+    if (!workspace) {
+      return res.status(404).json({ error: "Workspace not found" });
+    }
+
+    // Check if user is the owner
+    const userMember = workspace.members.find(
+      m => m.user.toString() === userId.toString()
+    );
+
+    if (!userMember || userMember.role !== "owner") {
+      return res.status(403).json({ error: "Only workspace owner can delete the workspace" });
+    }
+
+    // Delete all channels associated with this workspace
+    await Channel.deleteMany({ workspace: workspaceId });
+    console.log('🗑️ Deleted all channels for workspace:', workspaceId);
+
+    // Delete the workspace
+    await Workspace.findByIdAndDelete(workspaceId);
+    console.log('🗑️ Workspace deleted:', workspaceId);
+
+    res.json({ message: "Workspace deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting workspace:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

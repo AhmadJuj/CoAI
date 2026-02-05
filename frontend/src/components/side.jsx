@@ -1,5 +1,6 @@
 import React from "react";
-import { Hash, User, X, MessageSquare, UserPlus, FileText } from "lucide-react";
+import { Hash, User, X, MessageSquare, UserPlus, FileText, Trash2 } from "lucide-react";
+import WorkspaceCard from "./WorkSpaceCard";
 
 export default function SidebarNav({ 
   selectedWorkspace, 
@@ -16,7 +17,9 @@ export default function SidebarNav({
   isSidebarOpen,
   setIsSidebarOpen,
   mobileView,
-  onDocumentView
+  onDocumentView,
+  onWorkspaceDelete, // ✅ Add delete handler
+  userId // ✅ Add userId for role checking
 }) {
   
   // Handle DM click - create or fetch DM channel
@@ -116,30 +119,19 @@ export default function SidebarNav({
             </div>
           ) : (
             <div className="space-y-2">
-              {workspaces.map((workspace) => (
-                <button
-                  key={workspace._id || workspace.id}
-                  onClick={() => setSelectedWorkspace(workspace)}
-                  className="w-full flex items-center p-3 rounded-lg bg-[#1E293B] hover:bg-[#334155] transition-colors group"
-                >
-                  <span className="text-2xl mr-3">{workspace.icon || "📂"}</span>
-                  <div className="flex-1 text-left">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-[#E2E8F0] group-hover:text-blue-200">
-                        {workspace.name}
-                      </h3>
-                      {workspace.unread > 0 && (
-                        <span className="bg-[#06B6D4] text-black text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                          {workspace.unread}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-[#94A3B8]">
-                      {workspace.members?.length || 0} members
-                    </p>
-                  </div>
-                </button>
-              ))}
+              {workspaces.map((workspace) => {
+                const userMember = workspace.members?.find(m => m.user === userId);
+                const userRole = userMember?.role || 'member';
+                return (
+                  <WorkspaceCard
+                    key={workspace._id || workspace.id}
+                    workspace={workspace}
+                    onClick={() => setSelectedWorkspace(workspace)}
+                    onDelete={onWorkspaceDelete}
+                    userRole={userRole}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

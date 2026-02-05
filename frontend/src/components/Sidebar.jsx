@@ -108,6 +108,40 @@ export default function Sidebar() {
     setSelectedWorkspace(workspace);
   };
 
+  const handleWorkspaceDelete = async (workspaceId) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/workspaces/${workspaceId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete workspace');
+      }
+
+      // Remove from local state
+      setWorkspaces((prev) => prev.filter(w => w._id !== workspaceId));
+      
+      // If deleted workspace was selected, clear selection
+      if (selectedWorkspace?._id === workspaceId) {
+        setSelectedWorkspace(null);
+        setSelectedChannel(null);
+        setChatChannels([]);
+        setWorkspaceMembers([]);
+      }
+
+      console.log('✅ Workspace deleted successfully');
+    } catch (error) {
+      console.error('Error deleting workspace:', error);
+      alert(error.message || 'Failed to delete workspace. Please try again.');
+    }
+  };
+
   // ✅ Fetch workspace channels and members when a workspace is selected
   useEffect(() => {
     const fetchWorkspaceData = async () => {
@@ -223,6 +257,8 @@ export default function Sidebar() {
         setIsSidebarOpen={setIsSidebarOpen}
         mobileView={mobileView}
         onDocumentView={handleDocumentView}
+        onWorkspaceDelete={handleWorkspaceDelete}
+        userId={userId}
       />
 
       {/* Create Workspace Modal */}

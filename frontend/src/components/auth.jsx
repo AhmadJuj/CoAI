@@ -198,7 +198,7 @@ export default function Auth() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-whiteAlpha-200 py-3 font-semibold text-black transition hover:bg-black hover:text-whiteAlpha-200 hover:border-whiteAlpha-400 border border-transparent disabled:opacity-50"
+            className="w-full rounded-lg bg-[#06B6D4] py-3 font-semibold text-black transition hover:bg-[#0891b2] disabled:opacity-50"
             >
             {loading ? "Please wait..." : isLogin ? "Login" : "Sign Up"}
           </button>
@@ -209,7 +209,7 @@ export default function Auth() {
           <button
             type="button"
             onClick={() => setIsLogin(!isLogin)}
-            className="text-whiteAlpha-200 font-medium hover:underline hover:text-whiteAlpha-400"
+            className="text-[#06B6D4] font-medium hover:underline hover:text-[#0891b2]"
             >
             {isLogin ? "Sign Up" : "Login"}
           </button>
