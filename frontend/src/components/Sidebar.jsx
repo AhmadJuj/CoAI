@@ -61,7 +61,7 @@ export default function Sidebar() {
           // ✅ Set current user with name
           setCurrentUser({
             id: user.id,
-            name: user.user_metadata?.name || user.email || 'User',
+            name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
             email: user.email
           });
           

@@ -1,7 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, User, Bell, Menu } from "lucide-react";
 import { supabase } from "../supabaseClient";
 export default function Navbar({ isSidebarOpen, setIsSidebarOpen }) {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Get current user
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    
+    getUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -70,18 +89,13 @@ export default function Navbar({ isSidebarOpen, setIsSidebarOpen }) {
                     <div className="py-1">
                       <div className="px-4 py-2 border-b border-[#1E293B]">
                         <p className="text-sm font-medium text-blue-200">
-                          John Doe
+                          {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
                         </p>
                         <p className="text-xs text-[#E2E8F0]">
-                          john@example.com
+                          {user?.email || 'No email'}
                         </p>
                       </div>
-                      <button className="w-full text-left px-4 py-2 text-sm text-[#E2E8F0] hover:bg-[#1E293B] hover:text-blue-200 transition-colors">
-                        Profile Settings
-                      </button>
-                      <button className="w-full text-left px-4 py-2 text-sm text-[#E2E8F0] hover:bg-[#1E293B] hover:text-blue-200 transition-colors">
-                        My Documents
-                      </button>
+                     
                       <hr className="border-[#1E293B] my-1" />
                        <button
         onClick={handleSignOut}
