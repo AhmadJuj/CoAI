@@ -33,7 +33,8 @@ export default function ChatContent({
     const loadMessages = async () => {
       try {
         console.log('📥 Loading messages for channel:', selectedChannel.id, selectedChannel.name);
-        const response = await fetch(`http://localhost:5000/api/messages/channel/${selectedChannel.id}`);
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${apiUrl}/api/messages/channel/${selectedChannel.id}`);
         
         if (!response.ok) {
           throw new Error(`Failed to load messages: ${response.status}`);

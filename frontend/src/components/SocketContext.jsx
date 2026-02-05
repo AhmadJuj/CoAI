@@ -12,7 +12,8 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     // Connect to your backend server
-    const newSocket = io('http://localhost:5000'); // Change to your backend URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const newSocket = io(apiUrl);
     
     setSocket(newSocket);
 
