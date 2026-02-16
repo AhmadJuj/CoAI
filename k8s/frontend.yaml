@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dochub-frontend
+  namespace: dochub
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dochub-frontend
+  template:
+    metadata:
+      labels:
+        app: dochub-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: dochub-frontend:latest
+        imagePullPolicy: Never  # Use local image from Minikube
+        ports:
+        - containerPort: 80
+          name: http
+        env:
+        # Frontend API URL - points to backend service
+        - name: VITE_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: dochub-config
+              key: VITE_API_URL
+        # Supabase configuration
+        - name: VITE_SUPABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: dochub-secrets
+              key: SUPABASE_URL
+        - name: VITE_SUPABASE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: dochub-secrets
+              key: VITE_SUPABASE_KEY
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dochub-frontend
+  namespace: dochub
+spec:
+  type: NodePort  # Use NodePort for Minikube access
+  selector:
+    app: dochub-frontend
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+    nodePort: 30080  # Access via Minikube IP:30080
