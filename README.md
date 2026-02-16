@@ -1,6 +1,6 @@
-# 🧠 DocHub — Real-Time Collaborative Workspace Platform
+# 🧠 CoAi — Real-Time Collaborative Workspace Platform
 
-**DocHub** is a modern web-based collaboration platform inspired by **Slack**, **Notion**, and **Google Docs** — designed for real-time communication, document editing, and seamless teamwork.
+**CoAi** is a modern web-based collaboration platform inspired by **Slack**, **Notion**, and **Google Docs** — designed for real-time communication, document editing, and seamless teamwork.
 
 Built on the **MERN stack** with **Socket.IO** for real-time updates and deployed using **Kubernetes**, it allows teams to chat, create documents, and work together within shared workspaces with AI-powered assistance.
 
@@ -422,3 +422,4 @@ For questions or support, please open an issue or reach out via:
 
 **Made with ❤️ for collaborative teams everywhere**
 #
+
